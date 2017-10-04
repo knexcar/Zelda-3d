@@ -1,0 +1,6 @@
+*.class
+.DS_Store
+.DS_Store?
+._*
+bin/
+java3d-1_5-spec/
