@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics;
+import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -13,30 +14,27 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
-import javax.management.monitor.MonitorMBean;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Texture;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.Timer;
-import com.sun.j3d.utils.universe.SimpleUniverse;
-import com.sun.j3d.utils.image.TextureLoader;
-import javax.swing.JButton;
 import javax.swing.JTextField;
-import java.awt.Panel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerListModel;
-import javax.swing.JComboBox;
-import javax.swing.AbstractButton;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.SpringLayout;
+import javax.swing.Timer;
 
-@SuppressWarnings("serial")
+import com.sun.j3d.utils.image.TextureLoader;
+import com.sun.j3d.utils.universe.SimpleUniverse;
+
+
 public class Tester extends JPanel {
+	private static final long serialVersionUID = 1L;
 	//3D variables
 	public SimpleUniverse world;
 	//public BranchGroup mainGroup;
@@ -56,7 +54,26 @@ public class Tester extends JPanel {
 	ArrayList<Floor> floors;
 	ArrayList<Monster> monsters;
 	Timer gameUpdateTimer;
+	
+	
+	/**Variable to determine what type of items are being placed.
+	 * -2 = Placing the player
+	 * -1 = Delete mode.
+	 * 1 = Placing a wall.
+	 * 2 = Placing a floor or ceiling.
+	 * 3 = Placing a monster.
+	 * 30 = Placing a key.
+	 */
 	int placeMode = -1;
+	static final int PLACE_MODE_PLAYER = -2;
+	static final int PLACE_MODE_DELETE = -1;
+	static final int PLACE_MODE_NONE = 0;
+	static final int PLACE_MODE_WALL = 1;
+	static final int PLACE_MODE_FLOOR = 2;
+	static final int PLACE_MODE_MONSTER = 3;
+	static final int PLACE_MODE_CEILING = 4;
+	static final int PLACE_MODE_KEY = 30;
+	
 	Wall wallToPlace;
 	Floor floorToPlace;
 	Monster monsterToPlace;
@@ -67,7 +84,7 @@ public class Tester extends JPanel {
 	//UI Variables
 	Panel editPanel;
 	private JTextField textField;
-	JComboBox comboBox;
+	JComboBox<String> comboBox;
 	private SpringLayout springLayout;
 
 
@@ -76,7 +93,12 @@ public class Tester extends JPanel {
 		new Tester();
 	}
 
-	public Tester() {
+	
+	/**Constructor. Called only when the game is started. Deals with 
+	 * creating the window, loading essential resources, and setting
+	 * up everything else that needs to be set up.
+	 */
+	private Tester() {
 		//Window Stuff
 		{
 			window = new JFrame("Zelda");
@@ -147,6 +169,12 @@ public class Tester extends JPanel {
 		window.repaint();
 	}
 
+	
+	
+	
+	/**Simple update loop. Defers to either the editor or
+	 * the player and monsters for more advanced logic.
+	 */
 	private void update() {
 		if (editMode) {
 			editor.update();
@@ -159,6 +187,13 @@ public class Tester extends JPanel {
 		//window.repaint();
 	}
 
+	
+	
+	
+	
+	/**Private method to create all the buttons for the UI.
+	 * 
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void createButtons() {
 		textField = new JTextField("test");
@@ -306,7 +341,7 @@ public class Tester extends JPanel {
 								canvas3d.addMouseMotionListener(new MouseMotionListener() {
 									public void mouseMoved(MouseEvent e) {moveItemToPlace(e);}
 									public void mouseDragged(MouseEvent e) {
-										if (placeMode == -1) {
+										if (placeMode == PLACE_MODE_DELETE) {
 											placeItemToPlace(e);
 										} else {
 											if (moveItemToPlace(e)) {
@@ -345,6 +380,11 @@ public class Tester extends JPanel {
 
 	}
 
+	
+	
+	/**Creates a basic room, with 4 walls and a floor. Useful to create a
+	 * "default" level when the game is loaded, or a "blank slate" is desired.
+	 */
 	private void createSampleRoom() {
 		walls.clear();
 		floors.clear();
@@ -368,10 +408,19 @@ public class Tester extends JPanel {
 		musicSelected = 1;
 	}
 
+	
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 	}
+	
+	
+	
+	
+	
 
+	/**Set whether the game is in "level editing" mode or "Playing Mode"
+	 * @param editOrNot Whether or not the game should be in edit mode.
+	 */
 	public void setEditMode(boolean editOrNot) {
 		for (int i = 0; i < music.length; i++) {
 			if (music[i] != null) {
@@ -379,6 +428,9 @@ public class Tester extends JPanel {
 			}
 		}
 		canvas3d.requestFocus();
+		//Prevents error like text boxes showing up underneath the game screen.
+		this.revalidate();
+		
 		if (editOrNot) {
 			editor = new EditingCamera(levelGroup, world.getViewingPlatform().getViewPlatformTransform(), 64, 64);
 			setItemToPlace();
@@ -396,6 +448,12 @@ public class Tester extends JPanel {
 		editMode = editOrNot;
 	}
 
+	
+	
+	
+	/**Sets which item will be placed next based on the selection of the text box.
+	 * 
+	 */
 	public void setItemToPlace() {
 		//Cancel the previous item immediately to prevent ghosts
 		cancelItemToPlace();
@@ -403,7 +461,7 @@ public class Tester extends JPanel {
 		//"Delete Mode", "Player", "Wall Brick", "Wall Block", "Wall Rock", "Wall Tile", "Floor Dirt", "Floor Tile"
 		String firstPartOfItem = selectedItem.split(" ")[0];
 		if (firstPartOfItem.equals("Wall")) {
-			placeMode = 1;
+			placeMode = PLACE_MODE_WALL;
 			int textureIndex = 0;
 			if (selectedItem.equals("Wall Brick")) textureIndex = 1;
 			else if (selectedItem.equals("Wall Block")) textureIndex = 0;
@@ -415,22 +473,22 @@ public class Tester extends JPanel {
 			else if (selectedItem.equals("Wall Water")) textureIndex = 9;
 			wallToPlace = new Wall(levelGroup, 0, 0, 32, 32, wallTextures[textureIndex],0);
 		} else if (firstPartOfItem.equals("Door")) {
-			placeMode = 1;
+			placeMode = PLACE_MODE_WALL;
 			if (selectedItem.equals("Door")) wallToPlace = new Wall(levelGroup, 0, 0, 32, 32, wallTextures[5],1);
 			else if (selectedItem.equals("Door Horiz")) wallToPlace = new Wall(levelGroup, 0, 0, 64, 32, wallTextures[6],1);
 			else if (selectedItem.equals("Door Vert")) wallToPlace = new Wall(levelGroup, 0, 0, 32, 64, wallTextures[6],1);
 		} else if (firstPartOfItem.equals("Water")) {
-			placeMode = 1;
+			placeMode = PLACE_MODE_WALL;
 			wallToPlace = new Wall(levelGroup, 0, 0, 32, 32, wallTextures[9],-1);
 		} else if (firstPartOfItem.equals("Key")) {
-			placeMode = 30;
+			placeMode = PLACE_MODE_KEY;
 			wallToPlace = new Wall(levelGroup, 0, 0, 16, 16, wallTextures[0],30);
 		} else if (firstPartOfItem.equals("Delete")) {
-			placeMode = -1;
+			placeMode = PLACE_MODE_DELETE;
 		} else if (firstPartOfItem.equals("Player")) {
-			placeMode = -2;
+			placeMode = PLACE_MODE_PLAYER;
 		} else if (firstPartOfItem.equals("Floor")) {
-			placeMode = 2;
+			placeMode = PLACE_MODE_FLOOR;
 			int textureIndex = 0;
 			if (selectedItem.equals("Floor Brick")) textureIndex = 1;
 			else if (selectedItem.equals("Floor Block")) textureIndex = 0;
@@ -439,7 +497,7 @@ public class Tester extends JPanel {
 			else if (selectedItem.equals("Floor Tile")) textureIndex = 4;
 			floorToPlace = new Floor(levelGroup, 0, 0, 32, 32, wallTextures[textureIndex], 0);
 		} else if (firstPartOfItem.equals("Ceiling")) {
-			placeMode = 2;
+			placeMode = PLACE_MODE_CEILING;
 			int textureIndex = 0;
 			if (selectedItem.equals("Ceiling Brick")) textureIndex = 1;
 			else if (selectedItem.equals("Ceiling Block")) textureIndex = 0;
@@ -448,7 +506,7 @@ public class Tester extends JPanel {
 			else if (selectedItem.equals("Ceiling Tile")) textureIndex = 4;
 			floorToPlace = new Floor(levelGroup, 0, 0, 32, 32, wallTextures[textureIndex], 2);
 		} else if (firstPartOfItem.equals("Monster")) {
-			placeMode = 3;
+			placeMode = PLACE_MODE_MONSTER;
 			int xspeed = 0;
 			int yspeed = 0;
 			Color color = null;
@@ -461,6 +519,14 @@ public class Tester extends JPanel {
 		canvas3d.requestFocus();
 	}
 
+	
+	
+	
+	/**Moves whatever item is currently being placed. Used when the mouse is moved
+	 * and it now hovers over another grid square.
+	 * @param e The MouseEvent to get mouse coordinates from.
+	 * @return Whether the cursor has actually moved enough to warrant moving the item.
+	 */
 	public boolean moveItemToPlace(MouseEvent e) {
 		if (editMode) {
 			int cursorXt = getCursorX(e),
@@ -469,57 +535,101 @@ public class Tester extends JPanel {
 			if (cursorX == cursorXt && cursorY == cursorYt) return false;//To stop it from doing too much
 			cursorX = cursorXt; cursorY = cursorYt;
 			switch (placeMode) {
-			case 1: if (wallToPlace != null) wallToPlace.move(cursorXt, cursorYt); break;
-			case 2: if (floorToPlace != null) floorToPlace.move(cursorXt, cursorYt); break;
-			case 3: if (monsterToPlace != null) monsterToPlace.move(cursorXt+8, cursorYt+8); break;
-			case 30: if (wallToPlace != null) wallToPlace.move(cursorXt+8, cursorYt+8); break;
+			case PLACE_MODE_WALL: if (wallToPlace != null) wallToPlace.move(cursorXt, cursorYt); break;
+			case PLACE_MODE_FLOOR: if (floorToPlace != null) floorToPlace.move(cursorXt, cursorYt); break;
+			case PLACE_MODE_CEILING: if (floorToPlace != null) floorToPlace.move(cursorXt, cursorYt); break;
+			case PLACE_MODE_MONSTER: if (monsterToPlace != null) monsterToPlace.move(cursorXt+8, cursorYt+8); break;
+			case PLACE_MODE_KEY: if (wallToPlace != null) wallToPlace.move(cursorXt+8, cursorYt+8); break;
 			}
 		}
 		return true;
 	}
 	
-	int getCursorX(MouseEvent e) {return (int) (Math.floor((e.getX()*640/canvas3d.getWidth()+editor.x-320)/32f)*32);}
-	int getCursorY(MouseEvent e) {return (int) (Math.floor(((e.getY()*640/canvas3d.getWidth())+editor.y-640f/canvas3d.getWidth()*canvas3d.getHeight()/2)/32f)*32);}
+	
+	int getCursorX(MouseEvent e) {
+		return (int) (Math.floor((e.getX()*640/canvas3d.getWidth()+editor.x-320)/32f)*32);
+	}
+	int getCursorY(MouseEvent e) {
+		return (int) (Math.floor(((e.getY()*640/canvas3d.getWidth())+editor.y-640f/canvas3d.getWidth()*canvas3d.getHeight()/2)/32f)*32);
+	}
 
+	
+	
+	
+	
+	
+	
+	/**Places the item that was going to be placed, at the location of the mouse cursor.
+	 * @param e The MouseEvent to get mouse coordinates from.
+	 */
 	public void placeItemToPlace(MouseEvent e) {
 		if (editMode) {
-			if (placeMode == 1 || placeMode == 30) {
+			if (placeMode == PLACE_MODE_WALL) {
 				//Place a wall
-				//deleteItems(e, true);
+				deleteItems(e, DELETE_WALLS + DELETE_FLOORS + DELETE_MONSTERS);
 				walls.add(wallToPlace);
 				wallToPlace = null;
-				placeMode = 0;
+				placeMode = PLACE_MODE_NONE;
 				//Prepare another wall
 				setItemToPlace();
-			} else if (placeMode == 2) {
+			} else 	if (placeMode == PLACE_MODE_KEY) {
+				//Place a ley (which is saved as a wall)
+				deleteItems(e, DELETE_WALLS + DELETE_MONSTERS);
+				walls.add(wallToPlace);
+				wallToPlace = null;
+				placeMode = PLACE_MODE_NONE;
+				//Prepare another wall
+				setItemToPlace();
+			} else if (placeMode == PLACE_MODE_FLOOR) {
 				//Place a floor
-				//deleteItems(e, true);
+				deleteItems(e, DELETE_WALLS + DELETE_FLOORS);
 				floors.add(floorToPlace);
 				floorToPlace = null;
-				placeMode = 0;
-				//Prepare another wall
+				placeMode = PLACE_MODE_NONE;
+				//Prepare another floor
 				setItemToPlace();
-			} else if (placeMode == 3) {
+			} else if (placeMode == PLACE_MODE_CEILING) {
+				//Place a floor
+				deleteItems(e, DELETE_CEILINGS);
+				floors.add(floorToPlace);
+				floorToPlace = null;
+				placeMode = PLACE_MODE_NONE;
+				//Prepare another ceiling
+				setItemToPlace();
+			} else if (placeMode == PLACE_MODE_MONSTER) {
 				//Place a monster
-				//deleteItems(e, true);
+				deleteItems(e, DELETE_WALLS + DELETE_MONSTERS);
 				monsters.add(monsterToPlace);
 				monsterToPlace = null;
-				placeMode = 0;
+				placeMode = PLACE_MODE_NONE;
 				//Prepare another monster
 				setItemToPlace();
-			} else if (placeMode == -1) {
+			} else if (placeMode == PLACE_MODE_DELETE) {
 				//Delete Things
-				deleteItems(e, true);
-				deleteItems(e, false);
-			} else if (placeMode == -2) {
+				deleteItems(e, DELETE_WALLS + DELETE_FLOORS + DELETE_CEILINGS + DELETE_MONSTERS);
+			} else if (placeMode == PLACE_MODE_PLAYER) {
 				//Move the player
 				player.move(cursorX+8, cursorY+8);
 			}
 		}
 	}
 	
-	public void deleteItems(MouseEvent e, boolean onlyWalls) {
-		if (onlyWalls) {
+	
+	
+	
+	
+	
+	static final int DELETE_WALLS = 1;
+	static final int DELETE_FLOORS = 2;
+	static final int DELETE_CEILINGS = 4;
+	static final int DELETE_MONSTERS = 8;
+	
+	/**Deletes an item under the mouse cursor.
+	 * @param e The MouseEvent to get the position of the mouse cursor from.
+	 * @param bitMaskOfWhatToDelete Determines whether to delete walls, floors, ceilings, and/or monsters.
+	 */
+	public void deleteItems(MouseEvent e, int bitMaskOfWhatToDelete) {
+		if ((bitMaskOfWhatToDelete & DELETE_WALLS) > 0) {
 			for (Wall wall : walls) {
 				if (wall.intersects(getCursorX(e), getCursorY(e), 2, 2)) {
 					wall.unload();
@@ -527,14 +637,26 @@ public class Tester extends JPanel {
 					break;
 				}
 			}
+		}
+		if ((bitMaskOfWhatToDelete & DELETE_FLOORS) > 0) {
 			for (Floor floor : floors) {
-				if (floor.intersects(getCursorX(e), getCursorY(e), 2, 2)) {
+				if (floor.intersects(getCursorX(e), getCursorY(e), 2, 2) && floor.type == Floor.TYPE_NORMAL) {
 					floor.unload();
 					floors.remove(floor);
 					break;
 				}
 			}
-		} else {
+		}
+		if ((bitMaskOfWhatToDelete & DELETE_CEILINGS) > 0) {
+			for (Floor floor : floors) {
+				if (floor.intersects(getCursorX(e), getCursorY(e), 2, 2) && floor.type == Floor.TYPE_CEILING) {
+					floor.unload();
+					floors.remove(floor);
+					break;
+				}
+			}
+		}
+		if ((bitMaskOfWhatToDelete & DELETE_MONSTERS) > 0) {
 			for (Monster monster : monsters) {
 				if (monster.intersects(getCursorX(e)+16, getCursorY(e)+16, 2, 2)) {
 					monster.unload();
@@ -545,6 +667,14 @@ public class Tester extends JPanel {
 		}
 	}
 
+	
+	
+	
+	
+	/**Call this when no longer placing a particular item, so that
+	 * the item is unloaded properly (and doesn't leave behind any ghosts),
+	 * and so everything is cleaned up.
+	 */
 	public void cancelItemToPlace() {
 		if (editMode) {
 			if (wallToPlace != null) {
@@ -559,6 +689,12 @@ public class Tester extends JPanel {
 		}
 	}
 
+	
+	
+	/**Loads a level from a file.
+	 * @param fileName The name of the level to load, without an extension.
+	 * @return
+	 */
 	public boolean loadLevel(String fileName) {
 		levelGroup.detach();
 		levelGroup.removeAllChildren();
@@ -605,6 +741,12 @@ public class Tester extends JPanel {
 		return error;
 	}
 
+	
+	
+	/**Save a level to a file.
+	 * @param fileName The name of the level to save, without an extension.
+	 * @return Whether or not there was an error.
+	 */
 	public boolean saveLevel(String fileName) {
 		boolean error = false;
 		if (fileName.isEmpty()) {

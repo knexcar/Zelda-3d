@@ -54,7 +54,7 @@ import java.awt.GraphicsConfiguration;
  * Simple Java 3D example program to display a spinning cube.
  */
 public class HelloUniverse extends javax.swing.JFrame {
-
+	private static final long serialVersionUID = 3887978979684028228L;
 	private SimpleUniverse univ = null;
 	private BranchGroup scene = null;
 

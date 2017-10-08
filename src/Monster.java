@@ -13,11 +13,11 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.Color3f;
 import javax.vecmath.Vector3d;
 
-import com.sun.j3d.utils.geometry.Box;
 import com.sun.j3d.utils.geometry.Cylinder;
 import com.sun.j3d.utils.geometry.Primitive;
 
 public class Monster extends Rectangle {
+	private static final long serialVersionUID = 1L;
 	//Texture color;
 	BranchGroup levelGroup;
 	//The 3d object that is actually drawn

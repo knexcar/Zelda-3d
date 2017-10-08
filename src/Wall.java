@@ -13,10 +13,10 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Vector3d;
 
 import com.sun.j3d.utils.geometry.Box;
-import com.sun.j3d.utils.geometry.ColorCube;
 import com.sun.j3d.utils.geometry.Primitive;
 
 public class Wall extends Rectangle {
+	private static final long serialVersionUID = 6646351189812737173L;
 	Texture color;
 	BranchGroup levelGroup;
 	//The 3d object that is actually drawn

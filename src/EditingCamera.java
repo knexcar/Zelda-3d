@@ -2,17 +2,17 @@ import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-import javax.media.j3d.Appearance;
 import javax.media.j3d.BranchGroup;
-import javax.media.j3d.ColoringAttributes;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.vecmath.Vector3d;
 
-import com.sun.j3d.utils.geometry.Cylinder;
-import com.sun.j3d.utils.geometry.Primitive;
-
 public class EditingCamera extends Rectangle {
+	/**Okay, I added the serial thingymajig. Can you stop whining about it now?
+	 * 
+	 */
+	private static final long serialVersionUID = 5452918669110350811L;
+
 	public BranchGroup levelGroup;
 	
 	//Move the camera

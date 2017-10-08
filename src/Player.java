@@ -3,28 +3,21 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 import javax.media.j3d.Appearance;
-import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.ColoringAttributes;
-import javax.media.j3d.PointLight;
 import javax.media.j3d.SpotLight;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
-import javax.media.j3d.View;
 import javax.sound.sampled.Clip;
-import javax.vecmath.Color3f;
-import javax.vecmath.Point3d;
-import javax.vecmath.Point3f;
-import javax.vecmath.Quat4d;
 import javax.vecmath.Vector3d;
-import javax.vecmath.Vector3f;
 
 import com.sun.j3d.utils.geometry.Box;
-import com.sun.j3d.utils.geometry.ColorCube;
 import com.sun.j3d.utils.geometry.Cylinder;
 import com.sun.j3d.utils.geometry.Primitive;
 
 public class Player extends Rectangle {
+	private static final long serialVersionUID = -3837099006060988546L;
+
 	public BranchGroup levelGroup;
 	
 	//The actual object
@@ -206,6 +199,7 @@ public class Player extends Rectangle {
 	
 	
 	public class Sword extends Rectangle {
+		private static final long serialVersionUID = -3914633969937966189L;
 		//The actual object
 		Box drawingObject;
 		BranchGroup branchGroup;
